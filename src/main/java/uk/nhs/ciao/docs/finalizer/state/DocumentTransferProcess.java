@@ -5,7 +5,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Closeables;
 
@@ -41,21 +39,6 @@ public class DocumentTransferProcess {
 	 * Timestamp format used in state file-names
 	 */
 	private static final DateTimeFormatter STATE_NAME_TIMESTAMP_FORMATTER = DateTimeFormat.forPattern("yyyyMMdd-HHmmssSSS").withZoneUTC();
-	
-	
-	/**
-	 * Mapping of state file suffix to event
-	 */
-	private static final Map<String, Event> EVENTS_BY_FILE_SUFFIX;
-	static {
-		final Map<String, Event> map = Maps.newHashMap();
-		for (final Event event: Event.values()) {
-			if (event.fileSuffix != null) {
-				map.put(event.fileSuffix, event);
-			}
-		}
-		EVENTS_BY_FILE_SUFFIX = map;
-	}
 	
 	private final String correlationId;
 	private final File rootFolder;
@@ -186,7 +169,7 @@ public class DocumentTransferProcess {
 				return;
 			}
 			
-			final Event event = EVENTS_BY_FILE_SUFFIX.get(matcher.group(2));
+			final Event event = Event.getByFileSuffix(matcher.group(2));
 			if (event != null) {
 				transition(eventTime, event);
 			}
@@ -251,268 +234,6 @@ public class DocumentTransferProcess {
 			final Transition transition = new Transition(from, state, event, eventTime);
 			transitionListener.onTransition(this, transition);
 		}
-	}
-
-	// public enums
-	
-	public enum State {
-		PARSING(false) {
-			@Override
-			public State onDocumentParsed() {
-				return PREPARING;
-			}
-		},
-		
-		PREPARING(false) {
-			@Override
-			public State onDocumentPreparationTimeout() {
-				return FAILED;
-			}
-			
-			@Override
-			public State onDocumentPrepared() {
-				return SENDING;
-			}
-		},
-		
-		SENDING(false) {
-			@Override
-			public State onDocumentSendTimeout() {
-				return FAILED;
-			}
-			
-			@Override
-			public State onDocumentSendFailed() {
-				return FAILED;
-			}
-			
-			@Override
-			public State onDocumentSent(final boolean wantsInfResponse, final boolean wantsBusResponse) {
-				if (wantsInfResponse && wantsBusResponse) {
-					return WAITING_INF_AND_BUS_RESPONSE;
-				} else if (wantsInfResponse) {
-					return WAITING_INF_RESPONSE;
-				} else if (wantsBusResponse) {
-					return WAITING_BUS_RESPONSE;
-				} else {
-					return SUCCEEDED;
-				}
-			}
-		},
-		
-		WAITING_INF_AND_BUS_RESPONSE(false) {
-			@Override
-			public State onInfAckReceived() {
-				return WAITING_BUS_RESPONSE;
-			}
-			
-			@Override
-			public State onInfNackReceived() {
-				return FAILED;
-			}
-			
-			@Override
-			public State onInfResponseTimeout() {
-				return FAILED;
-			}
-			
-			@Override
-			public State onBusAckReceived() {
-				return WAITING_INF_RESPONSE;
-			}
-			
-			@Override
-			public State onBusNackReceived() {
-				return FAILED;
-			}
-			
-			@Override
-			public State onBusResponseTimeout() {
-				return FAILED;
-			}
-		},
-		
-		WAITING_INF_RESPONSE(false) {
-			@Override
-			public State onInfAckReceived() {
-				return SUCCEEDED;
-			}
-			
-			@Override
-			public State onInfNackReceived() {
-				return FAILED;
-			}
-			
-			@Override
-			public State onInfResponseTimeout() {
-				return FAILED;
-			}
-		},
-		
-		WAITING_BUS_RESPONSE(false) {
-			@Override
-			public State onBusAckReceived() {
-				return SUCCEEDED;
-			}
-			
-			@Override
-			public State onBusNackReceived() {
-				return FAILED;
-			}
-			
-			@Override
-			public State onBusResponseTimeout() {
-				return FAILED;
-			}
-		},
-		
-		FAILED(true),
-		SUCCEEDED(true);
-		
-		private final boolean terminal;
-		
-		private State(final boolean terminal) {
-			this.terminal = terminal;
-		}
-		
-		public boolean isTerminal() {
-			return terminal;
-		}
-		
-		public State onDocumentParsed() {
-			return this;
-		}
-		
-		public State onDocumentPreparationTimeout() {
-			return this;
-		}
-		
-		public State onDocumentPrepared() {
-			return this;
-		}
-		
-		public State onDocumentSendTimeout() {
-			return this;
-		}
-		
-		public State onDocumentSendFailed() {
-			return this;
-		}
-		
-		public State onDocumentSent(final boolean wantsInfResponse, final boolean wantsBusResponse) {
-			return this;
-		}
-		
-		public State onInfResponseTimeout() {
-			return this;
-		}
-		
-		public State onInfAckReceived() {
-			return this;
-		}
-		
-		public State onInfNackReceived() {
-			return this;
-		}
-		
-		public State onBusAckReceived() {
-			return this;
-		}
-		
-		public State onBusNackReceived() {
-			return this;
-		}
-		
-		public State onBusResponseTimeout() {
-			return this;
-		}
-	}
-	
-	public enum Event {
-		DOCUMENT_PARSED(null) {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onDocumentParsed();
-			}
-		},
-		
-		DOCUMENT_PREPARATION_TIMEOUT(null) {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onDocumentPreparationTimeout();
-			}
-		},
-		DOCUMENT_PREPARED("bus-message-sending") {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onDocumentPrepared();
-			}
-		},
-		
-		DOCUMENT_SEND_TIMEOUT(null) {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onDocumentSendTimeout();
-			}
-		},		
-		DOCUMENT_SEND_FAILED("bus-message-send-failed") {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onDocumentSendFailed();
-			}
-		},
-		DOCUMENT_SENT("bus-message-sent") {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onDocumentSent(process.busAckWanted, process.infAckWanted);
-			}
-		},
-		
-		INF_RESPONSE_TIMEOUT(null) {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onInfResponseTimeout();
-			}
-		},
-		INF_ACK_RECEIVED("inf-ack-received") {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onInfAckReceived();
-			}
-		},
-		INF_NACK_RECEIVED("inf-nack-received") {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onInfNackReceived();
-			}
-		},
-		
-		BUS_ACK_RECEIVED("bus-ack-received") {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onBusAckReceived();
-			}
-		},
-		BUS_NACK_RECEIVED("bus-nack-received") {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onBusNackReceived();
-			}
-		},
-		BUS_RESPONSE_TIMEOUT(null) {
-			@Override
-			public State dispatch(final State state, final DocumentTransferProcess process) {
-				return state.onBusResponseTimeout();
-			}
-		};
-		
-		private final String fileSuffix;
-		
-		private Event(final String fileSuffix) {
-			this.fileSuffix = fileSuffix;
-		}
-		
-		public abstract State dispatch(final State state, final DocumentTransferProcess process);
 	}
 }
  

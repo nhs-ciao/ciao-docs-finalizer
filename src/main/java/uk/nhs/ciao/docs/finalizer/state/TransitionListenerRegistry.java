@@ -3,8 +3,6 @@ package uk.nhs.ciao.docs.finalizer.state;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
-import uk.nhs.ciao.docs.finalizer.state.DocumentTransferProcess.State;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;

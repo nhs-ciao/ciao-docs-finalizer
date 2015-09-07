@@ -1,8 +1,5 @@
 package uk.nhs.ciao.docs.finalizer.state;
 
-import uk.nhs.ciao.docs.finalizer.state.DocumentTransferProcess.Event;
-import uk.nhs.ciao.docs.finalizer.state.DocumentTransferProcess.State;
-
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 

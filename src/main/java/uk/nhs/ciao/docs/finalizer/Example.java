@@ -1,14 +1,13 @@
 package uk.nhs.ciao.docs.finalizer;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.nhs.ciao.docs.finalizer.state.DocumentTransferProcess.State;
 import uk.nhs.ciao.docs.finalizer.state.DocumentTransferProcess;
 import uk.nhs.ciao.docs.finalizer.state.DocumentTransferProcessFactory;
+import uk.nhs.ciao.docs.finalizer.state.State;
 import uk.nhs.ciao.docs.finalizer.state.Transition;
 import uk.nhs.ciao.docs.finalizer.state.TransitionListener;
 import uk.nhs.ciao.docs.finalizer.state.TransitionListenerRegistry;
