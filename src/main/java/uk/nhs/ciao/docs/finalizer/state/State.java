@@ -4,26 +4,30 @@ public enum State {
 	PARSING(false) {
 		@Override
 		public State onDocumentParsed(final DocumentTransferProcess process, final long eventTime) {
-			process.setStartTime(eventTime);
+			process.getDocumentPreparationTimeout().start(eventTime);
 			return PREPARING;
 		}
 	},
 	
 	PREPARING(false) {
 		@Override
-		public State onDocumentPreparationTimeout() {
+		public State onDocumentPreparationTimeout(final DocumentTransferProcess process, final long eventTime) {
+			process.getDocumentPreparationTimeout().cancel();
 			return FAILED;
 		}
 		
 		@Override
-		public State onDocumentPrepared() {
+		public State onDocumentPrepared(final DocumentTransferProcess process, final long eventTime) {
+			process.getDocumentPreparationTimeout().cancel();
+			process.getDocumentSendTimeout().start(eventTime);
 			return SENDING;
 		}
 	},
 	
 	SENDING(false) {
 		@Override
-		public State onDocumentSendTimeout() {
+		public State onDocumentSendTimeout(final DocumentTransferProcess process, final long eventTime) {
+			process.getDocumentSendTimeout().cancel();
 			return FAILED;
 		}
 		
@@ -33,7 +37,17 @@ public enum State {
 		}
 		
 		@Override
-		public State onDocumentSent(final DocumentTransferProcess process) {
+		public State onDocumentSent(final DocumentTransferProcess process, final long eventTime) {
+			process.getDocumentSendTimeout().cancel();
+			
+			if (process.isInfAckWanted()) {
+				process.getInfResponseTimeout().start(eventTime);
+			}
+			
+			if (process.isBusAckWanted()) {
+				process.getBusResponseTimeout().start(eventTime);
+			}
+			
 			if (process.isInfAckWanted() && process.isBusAckWanted()) {
 				return WAITING_INF_AND_BUS_RESPONSE;
 			} else if (process.isInfAckWanted()) {
@@ -48,7 +62,8 @@ public enum State {
 	
 	WAITING_INF_AND_BUS_RESPONSE(false) {
 		@Override
-		public State onInfAckReceived() {
+		public State onInfAckReceived(final DocumentTransferProcess process, final long eventTime) {
+			process.getInfResponseTimeout().cancel();
 			return WAITING_BUS_RESPONSE;
 		}
 		
@@ -58,12 +73,14 @@ public enum State {
 		}
 		
 		@Override
-		public State onInfResponseTimeout() {
+		public State onInfResponseTimeout(final DocumentTransferProcess process, final long eventTime) {
+			process.getInfResponseTimeout().cancel();
 			return FAILED;
 		}
 		
 		@Override
-		public State onBusAckReceived() {
+		public State onBusAckReceived(final DocumentTransferProcess process, final long eventTime) {
+			process.getBusResponseTimeout().cancel();
 			return WAITING_INF_RESPONSE;
 		}
 		
@@ -73,14 +90,16 @@ public enum State {
 		}
 		
 		@Override
-		public State onBusResponseTimeout() {
+		public State onBusResponseTimeout(final DocumentTransferProcess process, final long eventTime) {
+			process.getBusResponseTimeout().cancel();
 			return FAILED;
 		}
 	},
 	
 	WAITING_INF_RESPONSE(false) {
 		@Override
-		public State onInfAckReceived() {
+		public State onInfAckReceived(final DocumentTransferProcess process, final long eventTime) {
+			process.getInfResponseTimeout().cancel();
 			return SUCCEEDED;
 		}
 		
@@ -90,14 +109,16 @@ public enum State {
 		}
 		
 		@Override
-		public State onInfResponseTimeout() {
+		public State onInfResponseTimeout(final DocumentTransferProcess process, final long eventTime) {
+			process.getInfResponseTimeout().cancel();
 			return FAILED;
 		}
 	},
 	
 	WAITING_BUS_RESPONSE(false) {
 		@Override
-		public State onBusAckReceived() {
+		public State onBusAckReceived(final DocumentTransferProcess process, final long eventTime) {
+			process.getBusResponseTimeout().cancel();
 			return SUCCEEDED;
 		}
 		
@@ -107,7 +128,8 @@ public enum State {
 		}
 		
 		@Override
-		public State onBusResponseTimeout() {
+		public State onBusResponseTimeout(final DocumentTransferProcess process, final long eventTime) {
+			process.getBusResponseTimeout().cancel();
 			return FAILED;
 		}
 	},
@@ -129,15 +151,15 @@ public enum State {
 		return this;
 	}
 	
-	public State onDocumentPreparationTimeout() {
+	public State onDocumentPreparationTimeout(final DocumentTransferProcess process, final long eventTime) {
 		return this;
 	}
 	
-	public State onDocumentPrepared() {
+	public State onDocumentPrepared(final DocumentTransferProcess process, final long eventTime) {
 		return this;
 	}
 	
-	public State onDocumentSendTimeout() {
+	public State onDocumentSendTimeout(final DocumentTransferProcess process, final long eventTime) {
 		return this;
 	}
 	
@@ -145,15 +167,15 @@ public enum State {
 		return this;
 	}
 	
-	public State onDocumentSent(final DocumentTransferProcess process) {
+	public State onDocumentSent(final DocumentTransferProcess process, final long eventTime) {
 		return this;
 	}
 	
-	public State onInfResponseTimeout() {
+	public State onInfResponseTimeout(final DocumentTransferProcess process, final long eventTime) {
 		return this;
 	}
 	
-	public State onInfAckReceived() {
+	public State onInfAckReceived(final DocumentTransferProcess process, final long eventTime) {
 		return this;
 	}
 	
@@ -161,7 +183,7 @@ public enum State {
 		return this;
 	}
 	
-	public State onBusAckReceived() {
+	public State onBusAckReceived(final DocumentTransferProcess process, final long eventTime) {
 		return this;
 	}
 	
@@ -169,7 +191,7 @@ public enum State {
 		return this;
 	}
 	
-	public State onBusResponseTimeout() {
+	public State onBusResponseTimeout(final DocumentTransferProcess process, final long eventTime) {
 		return this;
 	}
 }

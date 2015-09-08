@@ -50,11 +50,15 @@ public class DocumentTransferProcess {
 	 * declared volatile to allow accessors to return without locking
 	 */
 	private volatile State state;
-	private volatile long startTime;
 	private volatile String completedFolder;
 	private volatile String errorFolder;
 	private volatile boolean infAckWanted;
 	private volatile boolean busAckWanted;
+	
+	private final Timeout documentPreparationTimeout;
+	private final Timeout documentSendTimeout;
+	private final Timeout infResponseTimeout;
+	private final Timeout busResponseTimeout;
 	
 	public DocumentTransferProcess(final String correlationId, final File rootFolder, final TransitionListener transitionListener) {
 		this.correlationId = Preconditions.checkNotNull(correlationId);
@@ -62,6 +66,11 @@ public class DocumentTransferProcess {
 		this.transitionListener = Preconditions.checkNotNull(transitionListener);
 		this.lock = new Object();
 		this.state = State.PARSING;
+		
+		documentPreparationTimeout = new Timeout();
+		documentSendTimeout = new Timeout();
+		infResponseTimeout = new Timeout();
+		busResponseTimeout = new Timeout();
 	}
 	
 	public String getCorrelationId() {
@@ -74,10 +83,6 @@ public class DocumentTransferProcess {
 	
 	public State getState() {
 		return state;
-	}
-	
-	public long getStartTime() {
-		return startTime;
 	}
 	
 	public String getCompletedFolder() {
@@ -94,6 +99,22 @@ public class DocumentTransferProcess {
 	
 	public boolean isBusAckWanted() {
 		return busAckWanted;
+	}
+	
+	public Timeout getDocumentPreparationTimeout() {
+		return documentPreparationTimeout;
+	}
+	
+	public Timeout getDocumentSendTimeout() {
+		return documentSendTimeout;
+	}
+	
+	public Timeout getInfResponseTimeout() {
+		return infResponseTimeout;
+	}
+	
+	public Timeout getBusResponseTimeout() {
+		return busResponseTimeout;
 	}
 	
 	@Override
@@ -119,7 +140,6 @@ public class DocumentTransferProcess {
 				.add("correlationId", correlationId)
 				.add("rootFolder", rootFolder)
 				.add("state", state)
-				.add("startTime", startTime)
 				.add("completedFolder", completedFolder)
 				.add("errorFolder", errorFolder)
 				.add("infAckWanted", infAckWanted)
@@ -171,14 +191,44 @@ public class DocumentTransferProcess {
 
 	public void processTimeouts(final long now) {
 		synchronized (lock) {
-			
+			processTimeout(documentPreparationTimeout, Event.DOCUMENT_PREPARATION_TIMEOUT, now);
+			processTimeout(documentSendTimeout, Event.DOCUMENT_SEND_TIMEOUT, now);
+			processTimeout(infResponseTimeout, Event.INF_RESPONSE_TIMEOUT, now);
+			processTimeout(busResponseTimeout, Event.BUS_RESPONSE_TIMEOUT, now);
 		}
 	}
 	
 	// private methods - synchronisation is handled by the public calling methods
 	
-	public void setStartTime(final long startTime) {
-		this.startTime = startTime;
+	private void processTimeout(final Timeout timeout, final Event event, final long now) {
+		if (timeout.isTriggered(now)) {
+			final long eventTime = timeout.getTrigger();
+			timeout.cancel();
+			
+			storeTimestampEventFile(event, eventTime);
+			transition(eventTime, event);
+		}
+	}
+
+	private void storeTimestampEventFile(final Event event, final long eventTime) {
+		final File eventsFolder = new File(rootFolder, "events");
+		final File eventFile = new File(eventsFolder, EVENT_NAME_TIMESTAMP_FORMATTER.print(eventTime) + "-" + event.getFileSuffix());
+		
+		LOGGER.info("Storing {} event file - correlationId: {}, eventFile: {}", event, correlationId, eventFile);
+		
+		try {
+			// no-content - just stamp a new file to represent the event
+			eventFile.createNewFile();
+		} catch (IOException e) {
+			LOGGER.warn("Unable to store {} event file - correlationId: {}, eventFile: {}", event, correlationId, eventFile);
+		}
+	}
+	
+	private void cancelTimeouts() {
+		documentPreparationTimeout.cancel();
+		documentSendTimeout.cancel();
+		infResponseTimeout.cancel();
+		busResponseTimeout.cancel();
 	}
 	
 	private void setCompletedFolder(final File file) {
@@ -217,6 +267,10 @@ public class DocumentTransferProcess {
 		if (from != state) {
 			LOGGER.info("State transition - correlationId: {}, from: {}, to: {}, event: {}, eventTime: {}",
 					correlationId, from, state, event, eventTime);
+			
+			if (state.isTerminal()) {
+				cancelTimeouts();
+			}
 			
 			final Transition transition = new Transition(from, state, event, eventTime);
 			transitionListener.onTransition(this, transition);

@@ -12,23 +12,23 @@ public enum Event {
 		}
 	},
 	
-	DOCUMENT_PREPARATION_TIMEOUT(null) {
+	DOCUMENT_PREPARATION_TIMEOUT("document-preparation-timeout") {
 		@Override
 		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
-			return state.onDocumentPreparationTimeout();
+			return state.onDocumentPreparationTimeout(process, eventTime);
 		}
 	},
 	DOCUMENT_PREPARED("bus-message-sending") {
 		@Override
 		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
-			return state.onDocumentPrepared();
+			return state.onDocumentPrepared(process, eventTime);
 		}
 	},
 	
-	DOCUMENT_SEND_TIMEOUT(null) {
+	DOCUMENT_SEND_TIMEOUT("document-send-timeout") {
 		@Override
 		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
-			return state.onDocumentSendTimeout();
+			return state.onDocumentSendTimeout(process, eventTime);
 		}
 	},		
 	DOCUMENT_SEND_FAILED("bus-message-send-failed") {
@@ -40,20 +40,20 @@ public enum Event {
 	DOCUMENT_SENT("bus-message-sent") {
 		@Override
 		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
-			return state.onDocumentSent(process);
+			return state.onDocumentSent(process, eventTime);
 		}
 	},
 	
-	INF_RESPONSE_TIMEOUT(null) {
+	INF_RESPONSE_TIMEOUT("inf-response-timeout") {
 		@Override
 		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
-			return state.onInfResponseTimeout();
+			return state.onInfResponseTimeout(process, eventTime);
 		}
 	},
 	INF_ACK_RECEIVED("inf-ack-received") {
 		@Override
 		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
-			return state.onInfAckReceived();
+			return state.onInfAckReceived(process, eventTime);
 		}
 	},
 	INF_NACK_RECEIVED("inf-nack-received") {
@@ -66,7 +66,7 @@ public enum Event {
 	BUS_ACK_RECEIVED("bus-ack-received") {
 		@Override
 		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
-			return state.onBusAckReceived();
+			return state.onBusAckReceived(process, eventTime);
 		}
 	},
 	BUS_NACK_RECEIVED("bus-nack-received") {
@@ -75,10 +75,10 @@ public enum Event {
 			return state.onBusNackReceived();
 		}
 	},
-	BUS_RESPONSE_TIMEOUT(null) {
+	BUS_RESPONSE_TIMEOUT("bus-response-timeout") {
 		@Override
 		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
-			return state.onBusResponseTimeout();
+			return state.onBusResponseTimeout(process, eventTime);
 		}
 	};
 	
