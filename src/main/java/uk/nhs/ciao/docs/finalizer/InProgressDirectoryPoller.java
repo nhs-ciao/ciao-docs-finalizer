@@ -46,7 +46,7 @@ public class InProgressDirectoryPoller {
 			}
 
 			processControlFiles(state.process, state.processedFileNames);
-			processStateFiles(state.process, state.processedFileNames);
+			processEventFiles(state.process, state.processedFileNames);
 		}
 		
 		// Clean state map (i.e. remove entries with no matching in-progress folder)
@@ -84,13 +84,13 @@ public class InProgressDirectoryPoller {
 		}
 	}
 	
-	private void processStateFiles(final DocumentTransferProcess process, final Set<String> processedFileNames) {
-		final File stateDirectory = new File(process.getRootFolder(), "state");
-		if (!stateDirectory.isDirectory()) {
+	private void processEventFiles(final DocumentTransferProcess process, final Set<String> processedFileNames) {
+		final File eventsDirectory = new File(process.getRootFolder(), "events");
+		if (!eventsDirectory.isDirectory()) {
 			return;
 		}
 		
-		final String[] fileNames = stateDirectory.list();
+		final String[] fileNames = eventsDirectory.list();
 		if (fileNames.length == 0) {
 			return;
 		}
@@ -114,9 +114,9 @@ public class InProgressDirectoryPoller {
 			
 			processedFileNames.add(fileName);
 			
-			final File stateFile = new File(stateDirectory, fileName);
-			if (stateFile.isFile()) {
-				process.registerStateFile(stateFile);
+			final File eventFile = new File(eventsDirectory, fileName);
+			if (eventFile.isFile()) {
+				process.registerEventsFile(eventFile);
 			}
 		}
 	}

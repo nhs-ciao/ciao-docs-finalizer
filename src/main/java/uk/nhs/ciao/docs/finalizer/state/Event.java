@@ -5,79 +5,79 @@ import java.util.Map;
 import com.google.common.collect.Maps;
 
 public enum Event {
-	DOCUMENT_PARSED(null) {
+	DOCUMENT_PARSED("document-parsed") {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
-			return state.onDocumentParsed();
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
+			return state.onDocumentParsed(process, eventTime);
 		}
 	},
 	
 	DOCUMENT_PREPARATION_TIMEOUT(null) {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
 			return state.onDocumentPreparationTimeout();
 		}
 	},
 	DOCUMENT_PREPARED("bus-message-sending") {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
 			return state.onDocumentPrepared();
 		}
 	},
 	
 	DOCUMENT_SEND_TIMEOUT(null) {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
 			return state.onDocumentSendTimeout();
 		}
 	},		
 	DOCUMENT_SEND_FAILED("bus-message-send-failed") {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
 			return state.onDocumentSendFailed();
 		}
 	},
 	DOCUMENT_SENT("bus-message-sent") {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
-			return state.onDocumentSent(process.isBusAckWanted(), process.isInfAckWanted());
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
+			return state.onDocumentSent(process);
 		}
 	},
 	
 	INF_RESPONSE_TIMEOUT(null) {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
 			return state.onInfResponseTimeout();
 		}
 	},
 	INF_ACK_RECEIVED("inf-ack-received") {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
 			return state.onInfAckReceived();
 		}
 	},
 	INF_NACK_RECEIVED("inf-nack-received") {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
 			return state.onInfNackReceived();
 		}
 	},
 	
 	BUS_ACK_RECEIVED("bus-ack-received") {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
 			return state.onBusAckReceived();
 		}
 	},
 	BUS_NACK_RECEIVED("bus-nack-received") {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
 			return state.onBusNackReceived();
 		}
 	},
 	BUS_RESPONSE_TIMEOUT(null) {
 		@Override
-		public State dispatch(final State state, final DocumentTransferProcess process) {
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
 			return state.onBusResponseTimeout();
 		}
 	};
@@ -110,5 +110,5 @@ public enum Event {
 		return fileSuffix;
 	}
 	
-	public abstract State dispatch(final State state, final DocumentTransferProcess process);
+	public abstract State dispatch(final State state, final DocumentTransferProcess process, final long eventTime);
 }

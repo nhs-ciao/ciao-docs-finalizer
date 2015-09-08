@@ -22,23 +22,18 @@ public class DocumentTransferProcess {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DocumentTransferProcess.class);
 	
 	/**
-	 * ISO-8601 timestamp format used in the start-time control file
-	 */
-	private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZoneUTC();
-	
-	/**
-	 * Regular expression pattern matching state files (e.g. 20150903-153545804-bus-ack-received)
+	 * Regular expression pattern matching event files (e.g. 20150903-153545804-bus-ack-received)
 	 * <p>
-	 * Group 1 contains the timestamp portion (20150903-153545804) - see {@link #STATE_NAME_TIMESTAMP_FORMATTER}
+	 * Group 1 contains the timestamp portion (20150903-153545804) - see {@link #EVENT_NAME_TIMESTAMP_FORMATTER}
 	 * <p>
 	 * Group 2 the file suffix (bus-ack-received) - see {@link #EVENTS_BY_FILE_SUFFIX}
 	 */
-	private static final Pattern STATE_NAME_PATTERN = Pattern.compile("(\\d{8}-\\d{9})-(.+)");
+	private static final Pattern EVENT_NAME_PATTERN = Pattern.compile("(\\d{8}-\\d{9})-(.+)");
 	
 	/**
-	 * Timestamp format used in state file-names
+	 * Timestamp format used in event file-names
 	 */
-	private static final DateTimeFormatter STATE_NAME_TIMESTAMP_FORMATTER = DateTimeFormat.forPattern("yyyyMMdd-HHmmssSSS").withZoneUTC();
+	private static final DateTimeFormatter EVENT_NAME_TIMESTAMP_FORMATTER = DateTimeFormat.forPattern("yyyyMMdd-HHmmssSSS").withZoneUTC();
 	
 	private final String correlationId;
 	private final File rootFolder;
@@ -137,9 +132,7 @@ public class DocumentTransferProcess {
 	public void registerControlFile(final File file) {
 		synchronized (lock) {
 			final String name = file.getName();
-			if ("start-time".equals(name)) {
-				setStartTime(file);
-			} else if ("completed-folder".equals(name)) {
+			if ("completed-folder".equals(name)) {
 				setCompletedFolder(file);
 			}  else if ("error-folder".equals(name)) {
 				setErrorFolder(file);
@@ -151,20 +144,20 @@ public class DocumentTransferProcess {
 		}
 	}
 	
-	public void registerStateFile(final File file) {
+	public void registerEventsFile(final File file) {
 		synchronized (lock) {
-			final Matcher matcher = STATE_NAME_PATTERN.matcher(file.getName());
+			final Matcher matcher = EVENT_NAME_PATTERN.matcher(file.getName());
 			if (!matcher.matches()) {
-				LOGGER.debug("Unable to register state file - the name does not match expected pattern - correlationId: {}, file: {}",
+				LOGGER.debug("Unable to register event file - the name does not match expected pattern - correlationId: {}, file: {}",
 						correlationId, file);
 				return;
 			}
 			
 			final long eventTime;
 			try {
-				eventTime = STATE_NAME_TIMESTAMP_FORMATTER.parseMillis(matcher.group(1));
+				eventTime = EVENT_NAME_TIMESTAMP_FORMATTER.parseMillis(matcher.group(1));
 			} catch (IllegalArgumentException e) {
-				LOGGER.debug("Unable to register state file - the timestamp is not valid - correlationId: {}, timestamp: {}",
+				LOGGER.debug("Unable to register event file - the timestamp is not valid - correlationId: {}, timestamp: {}",
 						correlationId, matcher.group(1));
 				return;
 			}
@@ -184,14 +177,8 @@ public class DocumentTransferProcess {
 	
 	// private methods - synchronisation is handled by the public calling methods
 	
-	private void setStartTime(final File file) {
-		final String value = readFirstLine(file).trim();
-		try {
-			startTime = TIMESTAMP_FORMATTER.parseMillis(value);
-			transition(startTime, Event.DOCUMENT_PARSED);
-		} catch (IllegalArgumentException e) {
-			LOGGER.error("Unable to process start-time control file  - correlationId: {}, value: {}", correlationId, value, e);
-		}
+	public void setStartTime(final long startTime) {
+		this.startTime = startTime;
 	}
 	
 	private void setCompletedFolder(final File file) {
@@ -226,7 +213,7 @@ public class DocumentTransferProcess {
 	
 	private void transition(final long eventTime, final Event event) {
 		final State from = this.state;
-		this.state = event.dispatch(from, this);
+		this.state = event.dispatch(from, this, eventTime);
 		if (from != state) {
 			LOGGER.info("State transition - correlationId: {}, from: {}, to: {}, event: {}, eventTime: {}",
 					correlationId, from, state, event, eventTime);

@@ -3,7 +3,8 @@ package uk.nhs.ciao.docs.finalizer.state;
 public enum State {
 	PARSING(false) {
 		@Override
-		public State onDocumentParsed() {
+		public State onDocumentParsed(final DocumentTransferProcess process, final long eventTime) {
+			process.setStartTime(eventTime);
 			return PREPARING;
 		}
 	},
@@ -32,12 +33,12 @@ public enum State {
 		}
 		
 		@Override
-		public State onDocumentSent(final boolean wantsInfResponse, final boolean wantsBusResponse) {
-			if (wantsInfResponse && wantsBusResponse) {
+		public State onDocumentSent(final DocumentTransferProcess process) {
+			if (process.isInfAckWanted() && process.isBusAckWanted()) {
 				return WAITING_INF_AND_BUS_RESPONSE;
-			} else if (wantsInfResponse) {
+			} else if (process.isInfAckWanted()) {
 				return WAITING_INF_RESPONSE;
-			} else if (wantsBusResponse) {
+			} else if (process.isBusAckWanted()) {
 				return WAITING_BUS_RESPONSE;
 			} else {
 				return SUCCEEDED;
@@ -124,7 +125,7 @@ public enum State {
 		return terminal;
 	}
 	
-	public State onDocumentParsed() {
+	public State onDocumentParsed(final DocumentTransferProcess process, final long eventTime) {
 		return this;
 	}
 	
@@ -144,7 +145,7 @@ public enum State {
 		return this;
 	}
 	
-	public State onDocumentSent(final boolean wantsInfResponse, final boolean wantsBusResponse) {
+	public State onDocumentSent(final DocumentTransferProcess process) {
 		return this;
 	}
 	
