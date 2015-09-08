@@ -1,4 +1,4 @@
-package uk.nhs.ciao.docs.finalizer;
+package uk.nhs.ciao.docs.finalizer.processor;
 
 import java.io.File;
 import java.util.Arrays;
