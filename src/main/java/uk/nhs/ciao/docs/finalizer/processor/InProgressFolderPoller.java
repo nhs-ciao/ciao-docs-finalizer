@@ -15,43 +15,50 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-public class InProgressDirectoryPoller {
-	private static final Logger LOGGER = LoggerFactory.getLogger(InProgressDirectoryPoller.class);
+public class InProgressFolderPoller {
+	private static final Logger LOGGER = LoggerFactory.getLogger(InProgressFolderPoller.class);
 	
 	private final DocumentTransferProcessFactory factory;
-	private final File inProgressDirectory;
+	private final File inProgressFolder;
 	private final Map<String, DocumentTransferState> stateByCorrelationId = Maps.newHashMap();
 	
-	public InProgressDirectoryPoller(final DocumentTransferProcessFactory factory, final File inProgressDirectory) {
+	public InProgressFolderPoller(final DocumentTransferProcessFactory factory, final File inProgressFolder) {
 		this.factory = Preconditions.checkNotNull(factory);
-		this.inProgressDirectory = Preconditions.checkNotNull(inProgressDirectory);
+		this.inProgressFolder = Preconditions.checkNotNull(inProgressFolder);
 	}
 	
 	public void poll(final long now) {
-		final String[] correlationIds = inProgressDirectory.list();
-		for (int index = 0; index < correlationIds.length; index++) {
-			final String correlationId = correlationIds[index];
-			final File processDirectory = new File(inProgressDirectory, correlationId);
-			if (!processDirectory.isDirectory()) {
-				continue;
+		final String[] correlationIds = inProgressFolder.list();
+		
+		if (correlationIds != null) {
+			for (int index = 0; index < correlationIds.length; index++) {
+				final String correlationId = correlationIds[index];
+				final File processDirectory = new File(inProgressFolder, correlationId);
+				if (!processDirectory.isDirectory()) {
+					continue;
+				}
+	
+				LOGGER.debug("Processing in-progress folder - correlationId: {}", correlationId);
+	
+				DocumentTransferState state = stateByCorrelationId.get(correlationId);
+				if (state == null) {
+					final DocumentTransferProcess process = factory.createDocumentTransferProcess(correlationId, processDirectory);
+					state = new DocumentTransferState(process);
+					stateByCorrelationId.put(correlationId, state);
+				}
+	
+				processControlFiles(state.process, state.processedFileNames);
+				processEventFiles(state.process, state.processedFileNames);
 			}
-
-			LOGGER.debug("Processing in-progress folder - correlationId: {}", correlationId);
-
-			DocumentTransferState state = stateByCorrelationId.get(correlationId);
-			if (state == null) {
-				final DocumentTransferProcess process = factory.createDocumentTransferProcess(correlationId, processDirectory);
-				state = new DocumentTransferState(process);
-				stateByCorrelationId.put(correlationId, state);
-			}
-
-			processControlFiles(state.process, state.processedFileNames);
-			processEventFiles(state.process, state.processedFileNames);
 		}
 		
 		// Clean state map (i.e. remove entries with no matching in-progress folder)
 		if (!stateByCorrelationId.isEmpty()) {
-			stateByCorrelationId.keySet().retainAll(Arrays.asList(correlationIds));
+			if (correlationIds == null) {
+				stateByCorrelationId.clear();
+			} else {
+				stateByCorrelationId.keySet().retainAll(Arrays.asList(correlationIds));
+			}
 		}		
 
 		if (!stateByCorrelationId.isEmpty()) {
