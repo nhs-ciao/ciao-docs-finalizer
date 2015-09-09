@@ -2,9 +2,14 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
-	
-	<bean id="transitionListenerRegistry" class="uk.nhs.ciao.docs.finalizer.state.TransitionListenerRegistry" />
-	
+
+	 <bean id="transitionListenerRegistry" class="uk.nhs.ciao.docs.finalizer.state.TransitionListenerRegistryBuilder" scope="singleton" depends-on="camel">
+	 	<property name="idempotent" value="${idempotentActions}" />
+	 	<property name="idempotentTargetUri" value="direct:idempotentTransitionListener" />
+	 	<property name="producerTemplate" ref="producerTemplate" />
+	 	<property name="rules" value="${actions}" />
+	 </bean>
+	 
 	<bean id="documentTransferProcessFactory" class="uk.nhs.ciao.docs.finalizer.state.DocumentTransferProcessFactory">
 		<constructor-arg ref="transitionListenerRegistry" />
 		<property name="documentPreparationTimeout" value="${documentPreparationTimeout}" />
@@ -21,46 +26,4 @@
 			</bean>
 		</constructor-arg>
 	</bean>
-	
-	<!-- Transition listener registry configuration -->
-	<!-- Requires multiple argument 'setters' and some spring magic (depends-on/scope) to inject the camel producerTemplate -->
-	
-	<bean id="moveToCompletedFolderSetter" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean" scope="singleton" depends-on="camel">
-	    <property name="targetObject" ref="transitionListenerRegistry" />
-	    <property name="targetMethod" value="addToStateListener" />
-	    <property name="arguments">
-	        <list>
-	            <value>SUCCEEDED</value>
-	      		<bean class="uk.nhs.ciao.docs.finalizer.state.IdempotentTransitionListener" scope="singleton" depends-on="camel">
-					<constructor-arg value="direct:idempotentTransitionListener" />
-			          	<constructor-arg>
-			          		<ref bean="producerTemplate" />
-			          	</constructor-arg>
-					<constructor-arg>
-						<bean class="uk.nhs.ciao.docs.finalizer.action.MoveToCompletedFolder" />
-					</constructor-arg>
-			    </bean>
-	        </list>
-	    </property>
-	</bean>
-
-	<bean id="moveToErrorFolderSetter" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean" scope="singleton" depends-on="camel">
-	    <property name="targetObject" ref="transitionListenerRegistry" />
-	    <property name="targetMethod" value="addToStateListener" />
-	    <property name="arguments">
-	        <list>
-	            <value>FAILED</value>
-	      		<bean class="uk.nhs.ciao.docs.finalizer.state.IdempotentTransitionListener" scope="singleton" depends-on="camel">
-					<constructor-arg value="direct:idempotentTransitionListener" />
-			          	<constructor-arg>
-			          		<ref bean="producerTemplate" />
-			          	</constructor-arg>
-					<constructor-arg>
-						<bean class="uk.nhs.ciao.docs.finalizer.action.MoveToErrorFolder" />
-					</constructor-arg>
-			    </bean>
-	        </list>
-	    </property>
-	</bean>
-	
 </beans>
