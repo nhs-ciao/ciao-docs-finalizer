@@ -18,6 +18,14 @@ public enum Event {
 			return state.onDocumentPreparationTimeout(process, eventTime);
 		}
 	},
+	
+	DOCUMENT_PREPARATION_FAILED("document-preparation-failed") {
+		@Override
+		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
+			return state.onDocumentPreparationFailed(process, eventTime);
+		}
+	},
+	
 	DOCUMENT_PREPARED("bus-message-sending") {
 		@Override
 		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {

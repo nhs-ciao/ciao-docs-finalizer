@@ -17,6 +17,12 @@ public enum State {
 		}
 		
 		@Override
+		public State onDocumentPreparationFailed(final DocumentTransferProcess process, final long eventTime) {
+			process.getDocumentPreparationTimeout().cancel();
+			return FAILED;
+		}
+		
+		@Override
 		public State onDocumentPrepared(final DocumentTransferProcess process, final long eventTime) {
 			process.getDocumentPreparationTimeout().cancel();
 			process.getDocumentSendTimeout().start(eventTime);
@@ -152,6 +158,10 @@ public enum State {
 	}
 	
 	public State onDocumentPreparationTimeout(final DocumentTransferProcess process, final long eventTime) {
+		return this;
+	}
+	
+	public State onDocumentPreparationFailed(final DocumentTransferProcess process, final long eventTime) {
 		return this;
 	}
 	
