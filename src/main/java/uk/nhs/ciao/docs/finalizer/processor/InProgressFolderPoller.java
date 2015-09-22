@@ -1,22 +1,22 @@
 package uk.nhs.ciao.docs.finalizer.processor;
 
+import static uk.nhs.ciao.logging.CiaoLogMessage.logMsg;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import uk.nhs.ciao.docs.finalizer.state.DocumentTransferProcess;
 import uk.nhs.ciao.docs.finalizer.state.DocumentTransferProcessFactory;
+import uk.nhs.ciao.logging.CiaoLogger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 public class InProgressFolderPoller {
-	private static final Logger LOGGER = LoggerFactory.getLogger(InProgressFolderPoller.class);
+	private static final CiaoLogger LOGGER = CiaoLogger.getLogger(InProgressFolderPoller.class);
 	
 	private final DocumentTransferProcessFactory factory;
 	private final File inProgressFolder;
@@ -38,7 +38,11 @@ public class InProgressFolderPoller {
 					continue;
 				}
 	
-				LOGGER.debug("Processing in-progress folder - correlationId: {}", correlationId);
+				if (LOGGER.isDebugEnabled()) {
+					LOGGER.debug(logMsg("Processing in-progress folder")
+						.documentId(correlationId)
+						.fileName(processDirectory));
+				}
 	
 				DocumentTransferState state = stateByCorrelationId.get(correlationId);
 				if (state == null) {

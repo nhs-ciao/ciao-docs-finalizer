@@ -1,15 +1,16 @@
 package uk.nhs.ciao.docs.finalizer.action;
 
+import static uk.nhs.ciao.logging.CiaoLogMessage.logMsg;
+
 import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import uk.nhs.ciao.docs.finalizer.state.DocumentTransferProcess;
 import uk.nhs.ciao.docs.finalizer.state.Transition;
 import uk.nhs.ciao.docs.finalizer.state.TransitionListener;
+import uk.nhs.ciao.logging.CiaoLogger;
 
 /**
  * Action to move a document transfer folder from in-progress to its
@@ -18,12 +19,15 @@ import uk.nhs.ciao.docs.finalizer.state.TransitionListener;
  * @see DocumentTransferProcess#getCompletedFolder()
  */
 public class MoveToErrorFolder implements TransitionListener {
-	private static final Logger LOGGER = LoggerFactory.getLogger(MoveToErrorFolder.class);
+	private static final CiaoLogger LOGGER = CiaoLogger.getLogger(MoveToErrorFolder.class);
 	
 	@Override
 	public void onTransition(final DocumentTransferProcess process, final Transition transition) {
-		LOGGER.info("Moving files to error folder - correlationId: {}, errorFolder: {}",
-				process.getCorrelationId(), process.getErrorFolder());
+		LOGGER.info(logMsg("Moving files to error folder")
+				.documentId(process.getCorrelationId())
+				.state(process.getState())
+				.set("ErrorFolder", process.getErrorFolder())
+				.eventName("move-to-error-folder"));
 		
 		final File target = new File(process.getErrorFolder());
 		if (!target.getParentFile().exists()) {
@@ -33,8 +37,12 @@ public class MoveToErrorFolder implements TransitionListener {
 		try {
 			FileUtils.moveDirectory(process.getRootFolder(), target);
 		} catch (IOException e) {
-			LOGGER.error("Failed to move files to error folder - correlationId: {}, errorFolder: {}",
-				process.getCorrelationId(), target, e);
+			LOGGER.error(logMsg("Failed to move files to error folder")
+				.documentId(process.getCorrelationId())
+				.state(process.getState())
+				.set("ErrorFolder", process.getErrorFolder())
+				.eventName("move-to-error-folder-failed"),
+				e);
 		}
 	}
 }

@@ -1,5 +1,7 @@
 package uk.nhs.ciao.docs.finalizer.state;
 
+import static uk.nhs.ciao.logging.CiaoLogMessage.logMsg;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -10,8 +12,8 @@ import java.util.regex.Pattern;
 
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import uk.nhs.ciao.logging.CiaoLogger;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
@@ -19,7 +21,7 @@ import com.google.common.io.CharStreams;
 import com.google.common.io.Closeables;
 
 public class DocumentTransferProcess {
-	private static final Logger LOGGER = LoggerFactory.getLogger(DocumentTransferProcess.class);
+	private static final CiaoLogger LOGGER = CiaoLogger.getLogger(DocumentTransferProcess.class);
 	
 	/**
 	 * Regular expression pattern matching event files (e.g. 20150903-153545804-bus-ack-received)
@@ -168,8 +170,11 @@ public class DocumentTransferProcess {
 		synchronized (lock) {
 			final Matcher matcher = EVENT_NAME_PATTERN.matcher(file.getName());
 			if (!matcher.matches()) {
-				LOGGER.debug("Unable to register event file - the name does not match expected pattern - correlationId: {}, file: {}",
-						correlationId, file);
+				LOGGER.debug(logMsg("Unable to register event file - the name does not match expected pattern")
+						.documentId(getCorrelationId())
+						.state(state)
+						.eventName("event-file-registration-failed")
+						.fileName(file));
 				return;
 			}
 			
@@ -177,8 +182,13 @@ public class DocumentTransferProcess {
 			try {
 				eventTime = EVENT_NAME_TIMESTAMP_FORMATTER.parseMillis(matcher.group(1));
 			} catch (IllegalArgumentException e) {
-				LOGGER.debug("Unable to register event file - the timestamp is not valid - correlationId: {}, timestamp: {}",
-						correlationId, matcher.group(1));
+				LOGGER.debug(logMsg("Unable to register event file - the timestamp is not valid")
+					.documentId(getCorrelationId())
+					.state(state)
+					.eventName("event-file-registration-failed")
+					.fileName(file)
+					.set("Timestamp", matcher.group(1)));
+				
 				return;
 			}
 			
@@ -214,13 +224,21 @@ public class DocumentTransferProcess {
 		final File eventsFolder = new File(rootFolder, "events");
 		final File eventFile = new File(eventsFolder, EVENT_NAME_TIMESTAMP_FORMATTER.print(eventTime) + "-" + event.getFileSuffix());
 		
-		LOGGER.info("Storing {} event file - correlationId: {}, eventFile: {}", event, correlationId, eventFile);
+		LOGGER.info(logMsg("Storing event file")
+			.documentId(getCorrelationId())
+			.state(state)
+			.eventName("store-" + event.getFileSuffix())
+			.fileName(eventFile));
 		
 		try {
 			// no-content - just stamp a new file to represent the event
 			eventFile.createNewFile();
 		} catch (IOException e) {
-			LOGGER.warn("Unable to store {} event file - correlationId: {}, eventFile: {}", event, correlationId, eventFile);
+			LOGGER.warn(logMsg("Unable to store event file")
+				.documentId(getCorrelationId())
+				.state(state)
+				.eventName("store-" + event.getFileSuffix())
+				.fileName(eventFile));
 		}
 	}
 	
@@ -253,7 +271,10 @@ public class DocumentTransferProcess {
 				firstLine = lines.get(0);
 			}
 		} catch (IOException e) {
-			LOGGER.debug("Unable to read first line from file - correlationId: {}, file: {}", correlationId, file, e);
+			LOGGER.debug(logMsg("Unable to read first line from file")
+					.documentId(getCorrelationId())
+					.state(state)
+					.fileName(file));
 		} finally {
 			Closeables.closeQuietly(reader);
 		}
@@ -265,8 +286,11 @@ public class DocumentTransferProcess {
 		final State from = this.state;
 		this.state = event.dispatch(from, this, eventTime);
 		if (from != state) {
-			LOGGER.info("State transition - correlationId: {}, from: {}, to: {}, event: {}, eventTime: {}",
-					correlationId, from, state, event, eventTime);
+			LOGGER.info(logMsg("State transition")
+				.documentId(getCorrelationId())
+				.fromState(from)
+				.toState(state)
+				.eventName(event.getFileSuffix()));
 			
 			if (state.isTerminal()) {
 				cancelTimeouts();

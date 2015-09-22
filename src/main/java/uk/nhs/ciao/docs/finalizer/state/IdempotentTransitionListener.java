@@ -1,12 +1,14 @@
 package uk.nhs.ciao.docs.finalizer.state;
 
+import static uk.nhs.ciao.logging.CiaoLogMessage.logMsg;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.impl.DefaultExchange;
 import org.apache.camel.spi.IdempotentRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import uk.nhs.ciao.logging.CiaoLogger;
 
 import com.google.common.base.Preconditions;
 
@@ -15,7 +17,7 @@ import com.google.common.base.Preconditions;
  * by using a {@link IdempotentRepository} configured Camel route
  */
 public class IdempotentTransitionListener implements TransitionListener {
-	private static final Logger LOGGER = LoggerFactory.getLogger(IdempotentTransitionListener.class);
+	private static final CiaoLogger LOGGER = CiaoLogger.getLogger(IdempotentTransitionListener.class);
 	
 	public static final String HEADER_ID = "ciao.idempotentTransitionListener.id";
 	public static final String HEADER_PROCESS = "ciao.idempotentTransitionListener.process";
@@ -46,7 +48,11 @@ public class IdempotentTransitionListener implements TransitionListener {
 		
 		producerTemplate.send(targetUri, exchange);
 		if (exchange.getException() != null) {
-			LOGGER.error("Unable to process transition - correlationId: {}", process.getCorrelationId(), exchange.getException());
+			LOGGER.error(logMsg("Unable to process transition")
+				.documentId(process.getCorrelationId())
+				.fromState(transition.getFromState())
+				.toState(transition.getToState())
+				.eventName("idempotent-" + transition.getEvent().getFileSuffix() + "-failed"));
 		}
 	}
 	
