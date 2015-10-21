@@ -8,7 +8,7 @@ The purpose of this CIP is to monitor an *in-progress* folder which contains eve
 
 `ciao-docs-finalizer` is built on top of [Apache Camel](http://camel.apache.org/) and [Spring Framework](http://projects.spring.io/spring-framework/), and can be run as a stand-alone Java application, or via [Docker](https://www.docker.com/).
 
-Each application can hosts a Camel [route](http://camel.apache.org/routes.html), following the structure:
+Each application hosts a Camel [route](http://camel.apache.org/routes.html), following the structure:
 
 > input folder (event files) -\> state-machine transition -\> *(on completion)*: run action
 
