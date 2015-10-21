@@ -12,8 +12,6 @@ Each application hosts a Camel [route](http://camel.apache.org/routes.html), fol
 
 > input folder (event files) -\> state-machine transition -\> *(on completion)*: run action
 
--	*The event files use a common naming format written by the CIPs involved in a document upload process. The contents and format of the event files is determined by the component writing the event and is not interpreted by this CIP.*
-
 The details of the monitored folder and completion actions are specified at runtime through a combination of [ciao-configuration](https://github.com/nhs-ciao/ciao-utils) properties and Spring XML files.
 
 **Supported completion actions:**
@@ -21,6 +19,11 @@ The details of the monitored folder and completion actions are specified at runt
 -	`MoveToErrorFolder` - Moves the document's directory to the folder specified in the `./control/error-folder` file
 
 For more advanced usages, a custom action can be integrated by implementing the TransitionListener Java interface and providing a suitable spring XML configuration on the classpath.
+
+**In-progress Folder:**
+>	*The event files use a common naming format written by the CIPs involved in a document upload process. The contents and format of the event files is determined by the component writing the event and is not interpreted by this CIP.*
+
+-	A detailed description of the in-progress folder and associated state machine is available in [docs/state-machine.md](docs/state-machine.md).
 
 Configuration
 -------------
