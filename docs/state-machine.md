@@ -35,11 +35,11 @@ Files are expected to be written by a single process and not subsequently update
 
 > `ciao-docs-parser` provides the [InProgressFolderManagerRoute](https://github.com/nhs-ciao/ciao-docs-parser/blob/master/ciao-docs-parser-model/src/main/java/uk/nhs/ciao/docs/parser/route/InProgressFolderManagerRoute.java) class to support storing control and event files in the in-progress directory.
 
-### Input
+### Input Folder
 
 The input folder is used to store a copy of the original input file prior to any transformations. The contents of this folder are not directly used or interpreted by `ciao-docs-finalizer`.
 
-### Control
+### Control Folder
 
 The control folder is used to store control/configuration details of the upload process.
 
@@ -47,7 +47,7 @@ The control folder is used to store control/configuration details of the upload 
 
 `wants-inf-ack` and `wants-bus-ack` are optional files defining whether an ITK infrastructure response and/or an ITK business response has been requested. The file contents are not read - the existence of the files is enough to determine if the acknowledgements have been requested. These files are associated with ITK transports and are added by the transport if applicable.
 
-### Event Types
+### Events Folder
 
 The events folder represents a log/journal of key events throughout the document upload process and is used to drive the `ciao-docs-finalizer` state machine.
 
@@ -56,7 +56,7 @@ Each event file is names using the pattern: `${TIMESTAMP}-${EVENT_TYPE}`.
 The timestamp format is a modified version of [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) (suitable for file names):
 -	`yyyyMMdd-HHmmssSSS` - *** (in UTC timezone) ***
 
-Event files are processed in order of increasing `${TIMESTAMP}`.
+Event files are processed in order of increasing `${TIMESTAMP}`. Only the filename is interpreted by `ciao-docs-finalizer`, the CIP responsible for storing the event determines the file contents.
 
 The recognised event types are:
 -	`document-parsed`
