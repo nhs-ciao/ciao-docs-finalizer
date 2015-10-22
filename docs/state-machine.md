@@ -33,6 +33,8 @@ Each document upload process folder contains:
 
 Files are expected to be written by a single process and not subsequently updated.
 
+> `ciao-docs-parser` provides the [InProgressFolderManagerRoute](https://github.com/nhs-ciao/ciao-docs-parser/blob/master/ciao-docs-parser-model/src/main/java/uk/nhs/ciao/docs/parser/route/InProgressFolderManagerRoute.java) class to support storing control and event files in the in-progress directory.
+
 ### Input
 
 The input folder is used to store a copy of the original input file prior to any transformations. The contents of this folder are not directly used or interpreted by `ciao-docs-finalizer`.
@@ -86,7 +88,3 @@ The possible states of a document upload process are:
 -	`SUCCEEDED`
 
 > Additional details of the states are available in the [State](../src/main/java/uk/nhs/ciao/docs/finalizer/state/State.java) class.
-
-## Camel Route
-
-`ciao-docs-parser` provides the [InProgressFolderManagerRoute](https://github.com/nhs-ciao/ciao-docs-parser/blob/master/ciao-docs-parser-model/src/main/java/uk/nhs/ciao/docs/parser/route/InProgressFolderManagerRoute.java) class to support storing control and event files in the in-progress directory.
