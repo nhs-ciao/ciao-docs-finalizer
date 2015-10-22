@@ -71,8 +71,19 @@ The recognised event types are:
 -	`bus-nack-received`
 -	`bus-response-timeout`
 
-Further details of the event types are available in the [Event](../src/main/java/uk/nhs/ciao/docs/finalizer/state/Event.class) class.
+> Additional details of the event types are available in the [Event](../src/main/java/uk/nhs/ciao/docs/finalizer/state/Event.class) class.
 
-## State Transitions
-TODO:
+## States
+
+The possible states of a document upload process are:
+-	`PARSING`
+-	`PREPARING`
+-	`SENDING`
+-	`WAITING_INF_AND_BUS_RESPONSE`
+-	`WAITING_INF_RESPONSE`
+-	`WAITING_BUS_RESPONSE`
+-	`FAILED`
+-	`SUCCEEDED`
+
+> Additional details of the states are available in the [State](../src/main/java/uk/nhs/ciao/docs/finalizer/state/State.class) class.
 
