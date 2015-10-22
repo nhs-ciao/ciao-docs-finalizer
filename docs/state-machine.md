@@ -87,3 +87,6 @@ The possible states of a document upload process are:
 
 > Additional details of the states are available in the [State](../src/main/java/uk/nhs/ciao/docs/finalizer/state/State.class) class.
 
+## Camel Route
+
+`ciao-docs-parser` provides the [InProgressFolderManagerRoute](https://github.com/nhs-ciao/ciao-docs-parser/blob/master/ciao-docs-parser-model/src/main/java/uk/nhs/ciao/docs/parser/route/InProgressFolderManagerRoute.java) class to support storing control and event files in the in-progress directory.
