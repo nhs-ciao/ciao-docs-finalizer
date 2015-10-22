@@ -71,7 +71,7 @@ The recognised event types are:
 -	`bus-nack-received`
 -	`bus-response-timeout`
 
-> Additional details of the event types are available in the [Event](../src/main/java/uk/nhs/ciao/docs/finalizer/state/Event.class) class.
+> Additional details of the event types are available in the [Event](../src/main/java/uk/nhs/ciao/docs/finalizer/state/Event.java) class.
 
 ## States
 
@@ -85,7 +85,7 @@ The possible states of a document upload process are:
 -	`FAILED`
 -	`SUCCEEDED`
 
-> Additional details of the states are available in the [State](../src/main/java/uk/nhs/ciao/docs/finalizer/state/State.class) class.
+> Additional details of the states are available in the [State](../src/main/java/uk/nhs/ciao/docs/finalizer/state/State.java) class.
 
 ## Camel Route
 
