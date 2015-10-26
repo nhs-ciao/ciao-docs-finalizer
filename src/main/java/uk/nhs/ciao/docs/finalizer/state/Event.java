@@ -42,7 +42,7 @@ public enum Event {
 	DOCUMENT_SEND_FAILED("bus-message-send-failed") {
 		@Override
 		public State dispatch(final State state, final DocumentTransferProcess process, final long eventTime) {
-			return state.onDocumentSendFailed();
+			return state.onDocumentSendFailed(process, eventTime);
 		}
 	},
 	DOCUMENT_SENT("bus-message-sent") {

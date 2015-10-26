@@ -38,7 +38,7 @@ public enum State {
 		}
 		
 		@Override
-		public State onDocumentSendFailed() {
+		public State onDocumentSendFailed(final DocumentTransferProcess process, final long eventTime) {
 			return FAILED;
 		}
 		
@@ -67,6 +67,12 @@ public enum State {
 	},
 	
 	WAITING_INF_AND_BUS_RESPONSE(false) {
+		@Override
+		public State onDocumentSendFailed(final DocumentTransferProcess process, final long eventTime) {
+			process.getInfResponseTimeout().cancel();
+			return FAILED;
+		}
+		
 		@Override
 		public State onInfAckReceived(final DocumentTransferProcess process, final long eventTime) {
 			process.getInfResponseTimeout().cancel();
@@ -104,6 +110,12 @@ public enum State {
 	
 	WAITING_INF_RESPONSE(false) {
 		@Override
+		public State onDocumentSendFailed(final DocumentTransferProcess process, final long eventTime) {
+			process.getInfResponseTimeout().cancel();
+			return FAILED;
+		}
+		
+		@Override
 		public State onInfAckReceived(final DocumentTransferProcess process, final long eventTime) {
 			process.getInfResponseTimeout().cancel();
 			return SUCCEEDED;
@@ -122,6 +134,12 @@ public enum State {
 	},
 	
 	WAITING_BUS_RESPONSE(false) {
+		@Override
+		public State onDocumentSendFailed(final DocumentTransferProcess process, final long eventTime) {
+			process.getBusResponseTimeout().cancel();
+			return FAILED;
+		}
+		
 		@Override
 		public State onBusAckReceived(final DocumentTransferProcess process, final long eventTime) {
 			process.getBusResponseTimeout().cancel();
@@ -173,7 +191,7 @@ public enum State {
 		return this;
 	}
 	
-	public State onDocumentSendFailed() {
+	public State onDocumentSendFailed(final DocumentTransferProcess process, final long eventTime) {
 		return this;
 	}
 	
