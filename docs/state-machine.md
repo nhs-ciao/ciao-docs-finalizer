@@ -77,6 +77,8 @@ The recognised event types are:
 
 ## States
 
+![State Chart](finalizer-state-chart.gif)
+
 The possible states of a document upload process are:
 -	`PARSING`
 -	`PREPARING`
