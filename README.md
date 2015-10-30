@@ -89,6 +89,18 @@ At runtime ciao-docs-finalizer uses the available CIAO properties to determine w
 -   `idempotentActions` - Boolean flag which selects if an idempotent checks should be performed before performing state transition actions. This is used to ensure that only one node in a cluster performs the action.
 -   `actions` - Specifies which action to perform when a document upload transitions to a particular state. The format is one mapping per line, where a mapping has the form: `to={EVENT_NAME} > {ACTION_NAME}`.
 
+**Hazelcast Configuration:**
+
+The following properties are applicable for `repositoryConfig=hazelcast`:
+
+- `hazelcast.group.name` - Name of the hazelcast cluster group
+- `hazelcast.group.password` - Password of the hazelcast cluster group
+- `hazelcast.network.port` - The network port to use for the hazelcast server - if the port is already in use it will be incremented until a free port is found
+- `hazelcast.network.join.tcp_ip` - Comma separated list of static cluster members - if empty, multicast join should be enabled
+- `hazelcast.network.join.multicast.enabled` - Boolean value specifying whether multicast join should be used to find cluster members - if false, static TCP-IP members should be specified
+- `hazelcast.network.join.multicast.group` - Multicast address to use for finding cluster members
+- `hazelcast.network.join.multicast.port` - Multicast port to use for finding cluster members
+
 **Default Processor​:**
 
 >   The default processor configuration does not currently support any additional properties.
@@ -111,6 +123,8 @@ repositoryConfig=hazelcast
 hazelcast.group.name=ciao-docs-finalizer
 hazelcast.group.password=ciao-docs-finalizer-pass
 hazelcast.network.port=5701
+hazelcast.network.join.tcp_ip.members=
+hazelcast.network.join.multicast.enabled=true
 hazelcast.network.join.multicast.group=224.2.2.3
 hazelcast.network.join.multicast.port=54327
 
@@ -150,8 +164,9 @@ The CIP requires access to various file system directories and network ports (de
  -  Connects to: `localhost:61616`
 
 **Hazelcast**:
- -  Multicast discovery: `224.2.2.3:54327`
+ -  Multicast discovery: `224.2.2.3:54327` (If enabled)
  -  Listens on: `*:5701` (If port is already taken, the port number is incremented until a free port is found)
+ -  Connects to clustered nodes defined by the `hazelcast.network.join.tcp_ip.members` property
 
 **Filesystem**:
  -  If etcd is not available, CIAO properties will be loaded from: `~/.ciao/`
